@@ -156,6 +156,7 @@ pub enum Language {
     Swedish,
     Tamil,
     Turkish,
+    Chinese,
     Unknown,
 }
 
@@ -195,6 +196,7 @@ impl From<&str> for Language {
     fn from(string: &str) -> Self {
         match string.to_lowercase().as_ref() {
             "arabic" => Language::Arabic,
+            "chinese" => Language::Chinese,
             "danish" => Language::Danish,
             "dutch" => Language::Dutch,
             "english" => Language::English,

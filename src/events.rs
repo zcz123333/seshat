@@ -293,6 +293,32 @@ lazy_static! {
     ];
 }
 
+#[cfg(test)]
+lazy_static! {
+    pub static ref CHINESE_EVENTS: Vec<Event> = vec![
+        Event::new(
+            EventType::Message,
+            "中文呢",
+            Some("m.text"),
+            "$15163622445EBvZE:localhost",
+            "@example2:localhost",
+            151636_2244038,
+            "!test_room:localhost",
+            "",
+        ),
+        Event::new(
+            EventType::Message,
+            "来测试一下搜索",
+            Some("m.text"),
+            "$15163622445ZERuD:localhost",
+            "@example2:localhost",
+            151636_2244063,
+            "!test_room:localhost",
+            "",
+        ),
+    ];
+}
+
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 /// A checkpoint that remembers the current point in a room timeline when

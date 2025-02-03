@@ -37,6 +37,8 @@ use crate::{
     config::{Config, Language, SearchConfig},
     events::{Event, EventId, EventType},
 };
+use cang_jie::{CangJieTokenizer, TokenizerOption};
+use jieba_rs::Jieba;
 
 // Tantivy requires at least 3MB per writer thread and will panic if we
 // give it less than 3MB for the total writer heap size. The amount of writer
@@ -82,7 +84,7 @@ const SEARCH_LIMIT_INCREMENT: usize = 50;
 use tempfile::TempDir;
 
 #[cfg(test)]
-use crate::events::{EVENT, TOPIC_EVENT};
+use crate::events::{CHINESE_EVENTS, EVENT, TOPIC_EVENT};
 
 pub(crate) struct Index {
     index: tv::Index,
@@ -413,6 +415,15 @@ impl Index {
 
         match config.language {
             Language::Unknown => (),
+            Language::Chinese => {
+                let chinese_tokenizer = CangJieTokenizer {
+                    worker: Arc::new(Jieba::empty()), // empty dictionary
+                    option: TokenizerOption::Unicode,
+                };
+                index
+                    .tokenizers()
+                    .register(&tokenizer_name, chinese_tokenizer);
+            },
             _ => {
                 let tokenizer = tv::tokenizer::TextAnalyzer::from(tv::tokenizer::SimpleTokenizer)
                     .filter(tv::tokenizer::RemoveLongFilter::limit(40))
@@ -615,6 +626,33 @@ fn switch_languages() {
     let index = Index::new(&tmpdir, &config);
 
     assert!(index.is_err())
+}
+
+#[test]
+fn chinese_tokenizer() {
+    let tmpdir = TempDir::new().unwrap();
+    let config = Config::new().set_language(&Language::Chinese);
+    let index = Index::new(&tmpdir, &config).unwrap();
+
+    let mut writer = index.get_writer().unwrap();
+
+    for event in CHINESE_EVENTS.iter() {
+        writer.add_event(event);
+    }
+
+    writer.force_commit().unwrap();
+    index.reload().unwrap();
+
+    let searcher = index.get_searcher();
+    let result = searcher
+        .search("测试", &Default::default())
+        .unwrap()
+        .results;
+
+    let event_id = CHINESE_EVENTS[1].event_id.to_string();
+
+    assert_eq!(result.len(), 1);
+    assert_eq!(result[0].1, event_id);
 }
 
 #[test]
